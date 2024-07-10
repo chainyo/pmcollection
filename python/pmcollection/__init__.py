@@ -1,3 +1,3 @@
-from pmcollection._lowlevel import hello
+from pmcollection._lowlevel import download_files
 
-__all__ = ["hello"]
+__all__ = ["download_files"]
