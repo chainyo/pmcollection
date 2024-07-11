@@ -9,6 +9,7 @@ name = "pmcollection"
 crate-type = ["cdylib"]
 
 [dependencies]
+flate2 = "1.0.30"
 futures = "0.3.30"
 pyo3 = "0.20.3"
 pyo3-asyncio = { version = "0.20.0", features = ["tokio-runtime"]}

@@ -4,9 +4,11 @@ use pyo3_asyncio::tokio::future_into_py;
 use tokio::sync::Semaphore;
 use reqwest::Client;
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
+use flate2::read::GzDecoder;
 
 
 #[pyfunction]
@@ -23,7 +25,7 @@ fn download_files(py: Python, urls: Vec<String>, cache_folder: String, concurren
             let client = Arc::clone(&client);
             let semaphore = Arc::clone(&semaphore);
             let cache_folder = cache_folder.to_path_buf();
-            
+
             let handle = tokio::spawn(async move {
                 let _permit = semaphore.acquire().await.unwrap();
                 match fetch_and_save(&client, &url, &cache_folder).await {
@@ -51,22 +53,35 @@ fn download_files(py: Python, urls: Vec<String>, cache_folder: String, concurren
             }
         }
 
-        println!("Downloaded {} files successfully.", success_count);
-        println!("Failed to download {} files.", failure_count);
+        println!("Downloaded {} | Failed {}", success_count, failure_count);
 
         Ok(())
     })
 }
-
 
 async fn fetch_and_save(client: &Client, url: &str, cache_folder: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let response = client.get(url).send().await?.bytes().await?;
     let file_name = url.split('/').last().unwrap();
     let file_path = cache_folder.join(file_name);
 
-    let mut file = tokio::fs::File::create(file_path).await?;
+    let mut file = tokio::fs::File::create(&file_path).await?;
     file.write_all(&response).await?;
     file.flush().await?;
+
+    // Decompress the file
+    let decompressed_file_name = file_name.trim_end_matches(".gz");
+    let decompressed_file_path = cache_folder.join(decompressed_file_name);
+
+    let mut gz_decoder = GzDecoder::new(&response[..]);
+    let mut decompressed_data = Vec::new();
+    gz_decoder.read_to_end(&mut decompressed_data)?;
+
+    let mut decompressed_file = tokio::fs::File::create(decompressed_file_path).await?;
+    decompressed_file.write_all(&decompressed_data).await?;
+    decompressed_file.flush().await?;
+
+    // Delete the compressed file
+    fs::remove_file(file_path)?;
 
     Ok(())
 }
