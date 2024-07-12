@@ -23,6 +23,10 @@ frozenlist==1.4.1
     # via aiosignal
 idna==3.7
     # via yarl
+markdown-it-py==3.0.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
 multidict==6.0.5
     # via aiohttp
     # via yarl
@@ -31,6 +35,9 @@ pydantic==2.8.2
     # via pmcollection
 pydantic-core==2.20.1
     # via pydantic
+pygments==2.18.0
+    # via rich
+rich==13.7.1
 rxml==1.1.0
     # via pmcollection
 typing-extensions==4.12.2
