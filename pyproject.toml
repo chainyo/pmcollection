@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "The go-to package to download and manipulate PubMed data."
 dependencies = [
     "pydantic>=2.8.2",
-    "rxml>=1.1.0",
+    "rxml>=2.0.0",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.10"
 
 [build-system]
 requires = ["maturin>=1.2,<2.0"]

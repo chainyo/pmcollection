@@ -18,16 +18,18 @@ if __name__ == "__main__":
     # concurrency_limit = 20
 
     # asyncio.run(download_files_python(urls, cache_folder_python, concurrency_limit))
-    # from pmcollection.schemas import PubmedItem
-    from rxml import read_file
+    from pmcollection.schemas import PubmedItem
+    from rxml import read_file, SearchType
 
     root_node = read_file("tmp/pubmed24n0001.xml", "PubmedArticleSet")
-    print(len(root_node.children))
     for node in root_node.children:
-        print(node.name)
-        print(node.text)
-        print(node.attrs)
-        print(node.children["MedlineCitation"])
-        # item = PubmedItem.from_xml(node)
-        # print(item)
+        item = PubmedItem.from_xml(node)
+        print(item)
+        # print(node.search(SearchType.Tag, "Chemical"))
+        # _node = node.children[0]
+        # print(_node.name)
+        # print(_node.text)
+        # print(_node.attrs)
+        # print(_node.children)
+
         break
