@@ -40,58 +40,45 @@ class Article(BaseModel):
         Returns:
             Article: The Article created from the XML node.
         """
-        _abstract = node.search(by=SearchType.Tag, value="AbstractText")
+        _grants = node.search(by=SearchType.Tag, value="Grant")
+        _elocation_id = node.search(by=SearchType.Tag, value="ELocationID")
+        _vernacular_title = node.search(by=SearchType.Tag, value="VernacularTitle")
+        _data_banks = node.search(by=SearchType.Tag, value="DataBank")
+        _copyright_information = node.search(
+            by=SearchType.Tag, value="CopyrightInformation"
+        )
 
         return cls(
             publication_model=node.attrs.get("PubModel"),
-            journal=Journal.from_xml(node.search(by=SearchType.Tag, value="Journal")[0]),
+            journal=Journal.from_xml(
+                node.search(by=SearchType.Tag, value="Journal")[0]
+            ),
             title=node.search(by=SearchType.Tag, value="ArticleTitle")[0].text,
             abstract=find_tag_or_none(node, "AbstractText"),
             pagination=find_tag_or_none(node, "MedlinePgn"),
             authors=[
                 Author.from_xml(item)
-                for item in node.findall(".//AuthorList//Author")
+                for item in node.search(by=SearchType.Tag, value="Author")
             ],
-            language=node.find(".//Language").text,
-            date=(
-                datetime.date(
-                    year=int(node.find(".//ArticleDate//Year").text),
-                    month=int(node.find(".//ArticleDate//Month").text),
-                    day=int(node.find(".//ArticleDate//Day").text),
-                )
-                if node.find(".//ArticleDate") is not None
-                else None
+            language=node.search(by=SearchType.Tag, value="Language")[0].text,
+            date=define_datetime_from_node(
+                node.search(by=SearchType.Tag, value="ArticleDate")
             ),
-            grants=[
-                Grant.from_xml(item) for item in node.findall(".//GrantList//Grant")
-            ]
-            if node.find(".//GrantList") is not None
-            else None,
+            grants=[Grant.from_xml(item) for item in _grants] if _grants else None,
             publication_types=[
                 Publication.from_xml(item)
-                for item in node.findall(".//PublicationTypeList//PublicationType")
+                for item in node.search(by=SearchType.Tag, value="PublicationType")
             ],
-            elocation_id=(
-                ELocationId.from_xml(node.find(".//ELocationID"))
-                if node.find(".//ELocationID") is not None
-                else None
-            ),
-            vernacular_title=(
-                "".join(node.find(".//VernacularTitle").itertext())
-                if node.find(".//VernacularTitle") is not None
-                else None
-            ),
-            data_banks=[
-                DataBank.from_xml(item)
-                for item in node.findall(".//DataBankList//DataBank")
-            ]
-            if node.find(".//DataBankList") is not None
+            elocation_id=ELocationId.from_xml(_elocation_id[0])
+            if _elocation_id
             else None,
-            copyright_information=(
-                node.find(".//Abstract//CopyrightInformation").text
-                if node.find(".//Abstract//CopyrightInformation") is not None
-                else None
-            ),
+            vernacular_title=_vernacular_title[0].text if _vernacular_title else None,
+            data_banks=[DataBank.from_xml(item) for item in _data_banks]
+            if _data_banks
+            else None,
+            copyright_information=_copyright_information[0].text
+            if _copyright_information
+            else None,
         )
 
 
@@ -113,12 +100,9 @@ class DataBank(BaseModel):
             DataBank: The DataBank created from the XML node.
         """
         return cls(
-            name=node.find(".//DataBankName").text,
-            accession_numbers=[
-                item.text
-                for item in node.findall(".//AccessionNumberList//AccessionNumber")
-            ],
-            complete=True if node.attrib.get("CompleteYN") == "Y" else False,
+            name=node.search(SearchType.Tag, "DataBankName")[0].text,
+            accession_numbers=[item.text for item in node.search(by=SearchType.Tag, value="AccessionNumber")],
+            complete=True if node.attrs.get("CompleteYN") == "Y" else False,
         )
 
 
@@ -140,8 +124,8 @@ class ELocationId(BaseModel):
             ELocationId: The ELocationId created from the XML node.
         """
         return cls(
-            id_type=node.attrib.get("EIdType"),
-            valid=True if node.attrib.get("ValidYN") == "Y" else False,
+            id_type=node.attrs.get("EIdType"),
+            valid=True if node.attrs.get("ValidYN") == "Y" else False,
             value=node.text,
         )
 
@@ -194,7 +178,9 @@ class JournalIssue(BaseModel):
         Returns:
             JournalIssue: The JournalIssue created from the XML node.
         """
-        _date = define_datetime_from_node(node.search(by=SearchType.Tag, value="PubDate"))
+        _date = define_datetime_from_node(
+            node.search(by=SearchType.Tag, value="PubDate")
+        )
 
         return cls(
             medium=node.attrs.get("CitedMedium"),
@@ -241,7 +227,7 @@ class Publication(BaseModel):
         Returns:
             Publication: The Publication created from the XML node.
         """
-        return cls(unique_identifier=node.attrib.get("UI"), type=node.text)
+        return cls(unique_identifier=node.attrs.get("UI"), type=node.text)
 
 
 class ArticleId(BaseModel):
@@ -260,7 +246,7 @@ class ArticleId(BaseModel):
         Returns:
             ArticleId: The ArticleId created from the XML node.
         """
-        return cls(id=node.text, id_type=node.attrib.get("IdType"))
+        return cls(id=node.text, id_type=node.attrs.get("IdType"))
 
 
 class Author(BaseModel):
@@ -284,18 +270,15 @@ class Author(BaseModel):
         Returns:
             Author: The Author created from the XML node.
         """
+        _identifier = node.search(by=SearchType.Tag, value="Identifier")
         return cls(
-            valid=True if node.attrib.get("ValidYN") == "Y" else False,
-            last_name=find_tag_or_none(node, ".//LastName"),
-            fore_name=find_tag_or_none(node, ".//ForeName"),
-            initials=find_tag_or_none(node, ".//Initials"),
-            collective_name=find_tag_or_none(node, ".//CollectiveName"),
-            affiliation=find_tag_or_none(node, ".//AffiliationInfo//Affiliation"),
-            identifier=(
-                Identifier.from_xml(node.find(".//Identifier"))
-                if node.find(".//Identifier") is not None
-                else None
-            ),
+            valid=True if node.attrs.get("ValidYN") == "Y" else False,
+            last_name=find_tag_or_none(node, "LastName"),
+            fore_name=find_tag_or_none(node, "ForeName"),
+            initials=find_tag_or_none(node, "Initials"),
+            collective_name=find_tag_or_none(node, "CollectiveName"),
+            affiliation=find_tag_or_none(node, "Affiliation"),
+            identifier=Identifier.from_xml(_identifier[0]) if _identifier else None,
         )
 
 
@@ -317,9 +300,9 @@ class Chemical(BaseModel):
             Chemical: The Chemical created from the XML node.
         """
         return cls(
-            registry_number=node.find(".//RegistryNumber").text,
-            unique_identifier=node.attrib.get("UI"),
-            name_of_substance=node.find(".//NameOfSubstance").text,
+            registry_number=node.search(SearchType.Tag, "RegistryNumber")[0].text,
+            unique_identifier=node.attrs.get("UI"),
+            name_of_substance=node.search(SearchType.Tag, "NameOfSubstance")[0].text,
         )
 
 
@@ -350,16 +333,26 @@ class MedlineCitation(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> MedlineCitation:
         """Create a MedlineCitation from an XML node."""
-        _date_completed = define_datetime_from_node(node.search(by=SearchType.Tag, value="DateCompleted"))
-        _date_revised = define_datetime_from_node(node.search(by=SearchType.Tag, value="DateRevised"))
+        _date_completed = define_datetime_from_node(
+            node.search(by=SearchType.Tag, value="DateCompleted")
+        )
+        _date_revised = define_datetime_from_node(
+            node.search(by=SearchType.Tag, value="DateRevised")[0].children
+        )
 
         _keywords = node.search(by=SearchType.Tag, value="KeywordList")
-        _personal_name_subjects = node.search(by=SearchType.Tag, value="PersonalNameSubjectList")
-        _comments_corrections = node.search(by=SearchType.Tag, value="CommentsCorrectionsList")
+        _personal_name_subjects = node.search(
+            by=SearchType.Tag, value="PersonalNameSubjectList"
+        )
+        _comments_corrections = node.search(
+            by=SearchType.Tag, value="CommentsCorrectionsList"
+        )
         _other_ids = node.search(by=SearchType.Tag, value="OtherID")
         _other_abstracts = node.search(by=SearchType.Tag, value="OtherAbstract")
         _general_note = node.search(by=SearchType.Tag, value="GeneralNote")
-        _space_flight_missions = node.search(by=SearchType.Tag, value="SpaceFlightMission")
+        _space_flight_missions = node.search(
+            by=SearchType.Tag, value="SpaceFlightMission"
+        )
         _gene_symbols = node.search(by=SearchType.Tag, value="GeneSymbolList")
         _supplemental_meshs = node.search(by=SearchType.Tag, value="SupplMeshList")
         _investigators = node.search(by=SearchType.Tag, value="InvestigatorList")
@@ -369,7 +362,9 @@ class MedlineCitation(BaseModel):
             pmid_version=int(node.children[0].attrs.get("Version")),
             completed=_date_completed,
             revised=_date_revised,
-            article=Article.from_xml(node.search(by=SearchType.Tag, value="Article")[0]),
+            article=Article.from_xml(
+                node.search(by=SearchType.Tag, value="Article")[0]
+            ),
             journal_info=MedlineJournalInfo.from_xml(
                 node.search(by=SearchType.Tag, value="MedlineJournalInfo")[0]
             ),
@@ -400,15 +395,29 @@ class MedlineCitation(BaseModel):
             ]
             if _comments_corrections
             else None,
-            other_ids=[Identifier.from_xml(item) for item in _other_ids] if _other_ids else None,
-            other_abstracts=[OtherAbstract.from_xml(item) for item in _other_abstracts] if _other_abstracts else None,
-            general_note=GeneralNote.from_xml(_general_note[0]) if _general_note else None,
-            space_flight_missions=[item.text for item in _space_flight_missions] if _space_flight_missions else None,
-            genes_symbols=[item.text for item in _gene_symbols] if _gene_symbols else None,
+            other_ids=[Identifier.from_xml(item) for item in _other_ids]
+            if _other_ids
+            else None,
+            other_abstracts=[OtherAbstract.from_xml(item) for item in _other_abstracts]
+            if _other_abstracts
+            else None,
+            general_note=GeneralNote.from_xml(_general_note[0])
+            if _general_note
+            else None,
+            space_flight_missions=[item.text for item in _space_flight_missions]
+            if _space_flight_missions
+            else None,
+            gene_symbols=[item.text for item in _gene_symbols]
+            if _gene_symbols
+            else None,
             supplemental_meshs=[
                 SupplementalMesh.from_xml(item) for item in _supplemental_meshs
-            ] if _supplemental_meshs else None,
-            investigators=[Investigator.from_xml(item) for item in _investigators] if _investigators else None,
+            ]
+            if _supplemental_meshs
+            else None,
+            investigators=[Investigator.from_xml(item) for item in _investigators]
+            if _investigators
+            else None,
             coi_statement=find_tag_or_none(node, "CoiStatement"),
         )
 
@@ -427,22 +436,17 @@ class Investigator(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> Investigator:
         """Create an Investigator from an XML node."""
+        _affiliation = node.search(by=SearchType.Tag, value="Affiliation")
+        _identifier = node.search(by=SearchType.Tag, value="Identifier")
+
         return cls(
-            last_name=node.find(".//LastName").text,
-            fore_name=find_tag_or_none(node, ".//ForeName"),
-            initials=find_tag_or_none(node, ".//Initials"),
-            suffix=find_tag_or_none(node, ".//Suffix"),
-            affiliation=(
-                "".join(node.find(".//AffiliationInfo//Affiliation").itertext())
-                if node.find(".//AffiliationInfo//Affiliation") is not None
-                else None
-            ),
-            identifier=(
-                Identifier.from_xml(node.find(".//Identifier"))
-                if node.find(".//Identifier") is not None
-                else None
-            ),
-            valid=True if node.attrib.get("ValidYN") == "Y" else False,
+            last_name=node.search(SearchType.Tag, "LastName")[0].text,
+            fore_name=find_tag_or_none(node, "ForeName"),
+            initials=find_tag_or_none(node, "Initials"),
+            suffix=find_tag_or_none(node, "Suffix"),
+            affiliation=_affiliation[0].text if _affiliation else None,
+            identifier=Identifier.from_xml(_identifier[0]) if _identifier else None,
+            valid=True if node.attrs.get("ValidYN") == "Y" else False,
         )
 
 
@@ -457,8 +461,8 @@ class SupplementalMesh(BaseModel):
     def from_xml(cls, node: Node) -> SupplementalMesh:
         """Create a SupplementalMesh from an XML node."""
         return cls(
-            type=node.attrib.get("Type"),
-            ui=node.attrib.get("UI"),
+            type=node.attrs.get("Type"),
+            ui=node.attrs.get("UI"),
             name=node.text,
         )
 
@@ -475,10 +479,10 @@ class Grant(BaseModel):
     def from_xml(cls, node: Node) -> Grant:
         """Create a Grant from an XML node."""
         return cls(
-            id=find_tag_or_none(node, ".//GrantID"),
-            acronym=find_tag_or_none(node, ".//Acronym"),
-            agency=find_tag_or_none(node, ".//Agency"),
-            country=find_tag_or_none(node, ".//Country"),
+            id=find_tag_or_none(node, "GrantID"),
+            acronym=find_tag_or_none(node, "Acronym"),
+            agency=find_tag_or_none(node, "Agency"),
+            country=find_tag_or_none(node, "Country"),
         )
 
 
@@ -493,9 +497,9 @@ class OtherAbstract(BaseModel):
     def from_xml(cls, node: Node) -> OtherAbstract:
         """Create an OtherAbstract from an XML node."""
         return cls(
-            text="".join(node.find(".//AbstractText").itertext()),
-            source=node.attrib.get("Source"),
-            language=node.attrib.get("Language"),
+            text=node.search(SearchType.Tag, "AbstractText")[0].text,
+            source=node.attrs.get("Source"),
+            language=node.attrs.get("Language"),
         )
 
 
@@ -508,7 +512,7 @@ class Identifier(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> Identifier:
         """Create an Identifier from an XML node."""
-        return cls(id=node.text, source=node.attrib.get("Source"))
+        return cls(id=node.text, source=node.attrs.get("Source"))
 
 
 class MedlineJournalInfo(BaseModel):
@@ -523,10 +527,10 @@ class MedlineJournalInfo(BaseModel):
     def from_xml(cls, node: Node) -> MedlineJournalInfo:
         """Create a MedlineJournalInfo from an XML node."""
         return cls(
-            country=find_tag_or_none(node, ".//Country"),
-            title_abbreviation=node.find(".//MedlineTA").text,
-            nlm_unique_id=node.find(".//NlmUniqueID").text,
-            issn_linking=find_tag_or_none(node, ".//ISSNLinking"),
+            country=find_tag_or_none(node, "Country"),
+            title_abbreviation=node.search(SearchType.Tag, "MedlineTA")[0].text,
+            nlm_unique_id=node.search(SearchType.Tag, "NlmUniqueID")[0].text,
+            issn_linking=find_tag_or_none(node, "ISSNLinking"),
         )
 
 
@@ -541,15 +545,12 @@ class CommentCorrection(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> CommentCorrection:
         """Create a CommentCorrection from an XML node."""
+        _pmid = node.search(SearchType.Tag, "PMID")
         return cls(
-            pmid=find_tag_or_none(node, ".//PMID"),
-            pmid_version=(
-                int(node.find(".//PMID").attrib.get("Version"))
-                if node.find(".//PMID") is not None
-                else None
-            ),
-            ref_source=node.find(".//RefSource").text,
-            ref_type=node.attrib.get("RefType"),
+            pmid=int(_pmid[0].text) if _pmid else None,
+            pmid_version=int(_pmid[0].attrs.get("Version")) if _pmid else None,
+            ref_source=node.search(SearchType.Tag, "RefSource")[0].text,
+            ref_type=node.attrs.get("RefType"),
         )
 
 
@@ -562,15 +563,11 @@ class MeshHeading(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> MeshHeading:
         """Create a MeshHeading from an XML node."""
-        _qualifier = (
-            Topic.from_xml(node.find(".//QualifierName"))
-            if node.find(".//QualifierName") is not None
-            else None
-        )
+        _qualifier = node.search(SearchType.Tag, "QualifierName")
 
         return cls(
-            descriptor=Topic.from_xml(node.find(".//DescriptorName")),
-            qualifier=_qualifier,
+            descriptor=Topic.from_xml(node.search(SearchType.Tag, "DescriptorName")[0]),
+            qualifier=Topic.from_xml(_qualifier[0]) if _qualifier else None,
         )
 
 
@@ -583,7 +580,7 @@ class GeneralNote(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> GeneralNote:
         """Create a GeneralNote from an XML node."""
-        return cls(owner=node.attrib.get("Owner"), note=node.text)
+        return cls(owner=node.attrs.get("Owner"), note=node.text)
 
 
 class Keyword(BaseModel):
@@ -596,8 +593,8 @@ class Keyword(BaseModel):
     def from_xml(cls, node: Node) -> Keyword:
         """Create a Keyword from an XML node."""
         return cls(
-            major_topic=True if node.attrib.get("MajorTopicYN") == "Y" else False,
-            text="".join(node.itertext()),
+            major_topic=True if node.attrs.get("MajorTopicYN") == "Y" else False,
+            text=node.text,
         )
 
 
@@ -612,8 +609,8 @@ class Topic(BaseModel):
     def from_xml(cls, node: Node) -> Topic:
         """Create a Topic from an XML node."""
         return cls(
-            major_topic=True if node.attrib.get("MajorTopicYN") == "Y" else False,
-            unique_identifier=node.attrib.get("UI"),
+            major_topic=True if node.attrs.get("MajorTopicYN") == "Y" else False,
+            unique_identifier=node.attrs.get("UI"),
             name=node.text,
         )
 
@@ -634,23 +631,10 @@ class PubMedPubDate(BaseModel):
         Returns:
             PubMedPubDate: The PubMedPubDate created from the XML node.
         """
-        try:
-            _year = int(node.find(".//Year").text)
-            _month = int(node.find(".//Month").text)
-            _day = int(node.find(".//Day").text)
-            _date = datetime.date(year=_year, month=_month, day=_day)
-        except ValueError as e:
-            if _month == 2 and _day == 29:
-                _date = datetime.date(year=_year, month=_month, day=28)
-            else:
-                raise ValueError(
-                    f"Failed to parse PubMedPubDate: {e}\n\n"
-                    f"year = {node.find('.//Year').text}\n"
-                    f"month = {node.find('.//Month').text}\n"
-                    f"day = {node.find('.//Day').text}"
-                )
-
-        return cls(publication_status=node.attrib.get("PubStatus"), date=_date)
+        return cls(
+            publication_status=node.attrs.get("PubStatus"),
+            date=define_datetime_from_node(node.children),
+        )
 
 
 class PubmedData(BaseModel):
@@ -673,32 +657,33 @@ class PubmedData(BaseModel):
         """
         _article_ids = [
             ArticleId.from_xml(item)
-            for item in node.findall(".//ArticleIdList//ArticleId")
+            for item in node.search(by=SearchType.Tag, value="ArticleId")
         ]
         _history = [
             PubMedPubDate.from_xml(item)
-            for item in node.findall(".//History//PubMedPubDate")
+            for item in node.search(by=SearchType.Tag, value="PubMedPubDate")
         ]
         _references = [
             Reference.from_xml(item)
-            for item in node.findall(".//ReferenceList//Reference")
+            for item in node.search(by=SearchType.Tag, value="Reference")
         ]
-        _nested_references = [
-            Reference.from_xml(item)
-            for item in node.findall(".//ReferenceList//ReferenceList//Reference")
-        ]
-        _nested_nested_references = [
-            Reference.from_xml(item)
-            for item in node.findall(
-                ".//ReferenceList//ReferenceList//ReferenceList//Reference"
-            )
-        ]
+        # _nested_references = [
+        #     Reference.from_xml(item)
+        #     for item in node.findall(".//ReferenceList//ReferenceList//Reference")
+        # ]
+        # _nested_nested_references = [
+        #     Reference.from_xml(item)
+        #     for item in node.findall(
+        #         ".//ReferenceList//ReferenceList//ReferenceList//Reference"
+        #     )
+        # ]
 
         return cls(
             article_ids=_article_ids,
-            publication_status=node.find(".//PublicationStatus").text,
+            publication_status=node.search(SearchType.Tag, "PublicationStatus")[0].text,
             history=_history,
-            references=_references + _nested_references + _nested_nested_references,
+            references=_references,
+            # references=_references + _nested_references + _nested_nested_references,
         )
 
 
@@ -706,7 +691,7 @@ class PubmedItem(BaseModel):
     """A PubMed item object that represents a publication in PubMed."""
 
     citation: MedlineCitation
-    # data: PubmedData
+    data: PubmedData
 
     @classmethod
     def from_xml(cls, node: Node) -> PubmedItem:
@@ -719,10 +704,9 @@ class PubmedItem(BaseModel):
             PubmedItem: The PubmedItem created from the XML node.
         """
         _citation = MedlineCitation.from_xml(node.children[0])
-        # _data = PubmedData.from_xml(node.children[1])
+        _data = PubmedData.from_xml(node.children[1])
 
-        # return cls(citation=_citation, data=_data)
-        return cls(citation=_citation)
+        return cls(citation=_citation, data=_data)
 
     def prepare_to_ingestion(self) -> Union[Tuple[str, dict, int], None]:
         """Prepare the item for ingestion into the vector database.
@@ -736,7 +720,11 @@ class PubmedItem(BaseModel):
             _dump = self.model_dump()
             _metadata = {**_dump["citation"], **_dump["data"]}
 
-            return (f"{_title} {_abstract}", _metadata, self.citation.pmid,)
+            return (
+                f"{_title} {_abstract}",
+                _metadata,
+                self.citation.pmid,
+            )
         else:
             return None
 
@@ -752,10 +740,10 @@ class Reference(BaseModel):
         """Create a Reference from an XML node."""
         _article_ids = [
             ArticleId.from_xml(item)
-            for item in node.findall(".//ArticleIdList//ArticleId")
+            for item in node.search(by=SearchType.Tag, value="ArticleId")
         ]
 
         return cls(
-            citation="".join(node.find(".//Citation").itertext()),
+            citation=node.search(SearchType.Tag, "Citation")[0].text,
             article_ids=_article_ids,
         )

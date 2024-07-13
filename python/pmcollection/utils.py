@@ -24,8 +24,10 @@ def define_datetime_from_node(nodes: list[Node]) -> Union[datetime, None]:
             case "Day":
                 _day = node.text
 
-    if not _year or not _month:
+    if not _year:
         return None
+    elif not _month:
+        return datetime(int(_year), 1, 1)
     elif not _day:
         return datetime(int(_year), int(_month), 1)
     else:
