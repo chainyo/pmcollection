@@ -5,6 +5,7 @@ description = "The go-to package to download and manipulate PubMed data."
 dependencies = [
     "pydantic>=2.8.2",
     "rxml>=2.0.0",
+    "rich>=13.7.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"

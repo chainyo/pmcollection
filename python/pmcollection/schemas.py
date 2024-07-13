@@ -101,7 +101,10 @@ class DataBank(BaseModel):
         """
         return cls(
             name=node.search(SearchType.Tag, "DataBankName")[0].text,
-            accession_numbers=[item.text for item in node.search(by=SearchType.Tag, value="AccessionNumber")],
+            accession_numbers=[
+                item.text
+                for item in node.search(by=SearchType.Tag, value="AccessionNumber")
+            ],
             complete=True if node.attrs.get("CompleteYN") == "Y" else False,
         )
 
@@ -353,7 +356,7 @@ class MedlineCitation(BaseModel):
         _space_flight_missions = node.search(
             by=SearchType.Tag, value="SpaceFlightMission"
         )
-        _gene_symbols = node.search(by=SearchType.Tag, value="GeneSymbolList")
+        _gene_symbols = node.search(by=SearchType.Tag, value="GeneSymbol")
         _supplemental_meshs = node.search(by=SearchType.Tag, value="SupplMeshList")
         _investigators = node.search(by=SearchType.Tag, value="InvestigatorList")
 
