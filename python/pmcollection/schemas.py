@@ -672,25 +672,14 @@ class PubmedData(BaseModel):
         ]
         _references = [
             Reference.from_xml(item)
-            for item in node.search(by=SearchType.Tag, value="Reference")
+            for item in node.search(by=SearchType.Tag, value="Reference", depth=4)
         ]
-        # _nested_references = [
-        #     Reference.from_xml(item)
-        #     for item in node.findall(".//ReferenceList//ReferenceList//Reference")
-        # ]
-        # _nested_nested_references = [
-        #     Reference.from_xml(item)
-        #     for item in node.findall(
-        #         ".//ReferenceList//ReferenceList//ReferenceList//Reference"
-        #     )
-        # ]
 
         return cls(
             article_ids=_article_ids,
             publication_status=node.search(SearchType.Tag, "PublicationStatus")[0].text,
             history=_history,
             references=_references,
-            # references=_references + _nested_references + _nested_nested_references,
         )
 
 
