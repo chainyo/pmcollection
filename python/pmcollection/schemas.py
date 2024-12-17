@@ -328,7 +328,6 @@ class MedlineCitation(BaseModel):
     other_abstracts: list[OtherAbstract] | None
     general_note: GeneralNote | None
     space_flight_missions: list[str] | None
-    genes: list[str] | None
     gene_symbols: list[str] | None
     supplemental_meshs: list[SupplementalMesh] | None
     investigators: list[Investigator] | None
@@ -686,7 +685,7 @@ class PubmedData(BaseModel):
 class PubmedItem(BaseModel):
     """A PubMed item object that represents a publication in PubMed."""
 
-    # citation: MedlineCitation
+    citation: MedlineCitation
     data: PubmedData
 
     @classmethod
@@ -699,31 +698,10 @@ class PubmedItem(BaseModel):
         Returns:
             PubmedItem: The PubmedItem created from the XML node.
         """
-        # _citation = MedlineCitation.from_xml(node.children[0])
+        _citation = MedlineCitation.from_xml(node.children[0])
         _data = PubmedData.from_xml(node.children[1])
 
-        # return cls(citation=_citation, data=_data)
-        return cls(data=_data)
-
-    def prepare_to_ingestion(self) -> tuple[str, dict, int] | None:
-        """Prepare the item for ingestion into the vector database.
-
-        If the item has an abstract, it will be used as the text. Otherwise, a None will be returned to skip the item.
-        """
-        _abstract = self.citation.article.abstract
-
-        if _abstract:
-            _title = self.citation.article.title
-            _dump = self.model_dump()
-            _metadata = {**_dump["citation"], **_dump["data"]}
-
-            return (
-                f"{_title} {_abstract}",
-                _metadata,
-                self.citation.pmid,
-            )
-        else:
-            return None
+        return cls(citation=_citation, data=_data)
 
 
 class Reference(BaseModel):
