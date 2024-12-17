@@ -1,26 +1,104 @@
-[project]
-name = "pmcollection"
-version = "0.1.0"
-description = "The go-to package to download and manipulate PubMed data."
-dependencies = [
-    "pydantic>=2.8.2",
-    "rxml>=1.1.0",
-]
-readme = "README.md"
-requires-python = ">= 3.8"
-
 [build-system]
 requires = ["maturin>=1.2,<2.0"]
 build-backend = "maturin"
 
-[tool.rye]
-managed = true
-dev-dependencies = [
+[project]
+name = "pmcollection"
+dynamic = ["version"]
+description = "The go-to package to download and manipulate PubMed data."
+readme = "README.md"
+requires-python = ">= 3.10"
+authors = [
+    { name = "Thomas Chaigneau", email = "thomas@chainyo.dev" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "pydantic>=2.8.2",
+    "rxml>=2.0.0",
+]
+
+[project.urls]
+Source = "https://github.com/chainyo/pmcollection"
+Issues = "https://github.com/chainyo/pmcollection/issues"
+
+[tool.hatch.version]
+path = "python/pmcollection/__version__.py"
+
+[dependency-groups]
+dev = [
     "pip>=24.1.2",
     "aiofiles>=24.1.0",
     "aiohttp>=3.9.5",
     "rich>=13.7.1",
 ]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+lint.ignore = [
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
+]
+lint.select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = ["pmcollection"]
+lines-after-imports = 2
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
 
 [tool.maturin]
 python-source = "python"
