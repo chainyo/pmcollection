@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 
 from pydantic import BaseModel
-from rxml import Node
+from rxml import Node, SearchType
 
 from pmcollection.constants import MONTHS
 from pmcollection.utils import find_or_none
@@ -284,7 +284,7 @@ class ArticleId(BaseModel):
         Returns:
             ArticleId: The ArticleId created from the XML node.
         """
-        return cls(id=node.text, id_type=node.attrib.get("IdType"))
+        return cls(id=node.text, id_type=node.attrs.get("IdType"))
 
 
 class Author(BaseModel):
@@ -757,8 +757,9 @@ class PubmedData(BaseModel):
         """
         _article_ids = [
             ArticleId.from_xml(item)
-            for item in node.findall(".//ArticleIdlist//ArticleId")
+            for item in node.search(by=SearchType.Tag, value="ArticleId")
         ]
+        print(_article_ids)
         _history = [
             PubMedPubDate.from_xml(item)
             for item in node.findall(".//History//PubMedPubDate")
@@ -789,7 +790,7 @@ class PubmedData(BaseModel):
 class PubmedItem(BaseModel):
     """A PubMed item object that represents a publication in PubMed."""
 
-    citation: MedlineCitation
+    # citation: MedlineCitation
     data: PubmedData
 
     @classmethod
@@ -802,10 +803,11 @@ class PubmedItem(BaseModel):
         Returns:
             PubmedItem: The PubmedItem created from the XML node.
         """
-        _citation = MedlineCitation.from_xml(node.children[0])
+        # _citation = MedlineCitation.from_xml(node.children[0])
         _data = PubmedData.from_xml(node.children[1])
 
-        return cls(citation=_citation, data=_data)
+        # return cls(citation=_citation, data=_data)
+        return cls(data=_data)
 
     def prepare_to_ingestion(self) -> tuple[str, dict, int] | None:
         """Prepare the item for ingestion into the vector database.
