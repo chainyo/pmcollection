@@ -11,11 +11,13 @@ def read_xml_with_rxml(file_path: str):
     """Read an XML file using rxml."""
     return rxml.read_file(file_path, "PubmedArticleSet")
 
+
 def read_xml_with_et(file_path: str):
     """Read an XML file using ElementTree."""
     with open(file_path, "rb") as f:
         tree = ET.parse(f)
     return tree.getroot()
+
 
 def measure_time(func, *args):
     """Measure the time taken by a function."""
@@ -23,6 +25,7 @@ def measure_time(func, *args):
     func(*args)
     end_time = time.time()
     return end_time - start_time
+
 
 def run_benchmarks():
     file_path = "tmp/pubmed24n0001.xml"
@@ -39,7 +42,7 @@ def run_benchmarks():
 
     print(f"rxml: {rxml_time:.4f} s")
     print(f"ElementTree: {et_time:.4f} s")
-    
+
 
 if __name__ == "__main__":
     run_benchmarks()
