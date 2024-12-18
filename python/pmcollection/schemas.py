@@ -7,7 +7,6 @@ import datetime
 from pydantic import BaseModel
 from rxml import Node, SearchType
 
-from pmcollection.constants import MONTHS
 from pmcollection.utils import define_datetime_from_node, find_tag_or_none
 
 
@@ -43,41 +42,25 @@ class Article(BaseModel):
         _elocation_id = node.search(by=SearchType.Tag, value="ELocationID")
         _vernacular_title = node.search(by=SearchType.Tag, value="VernacularTitle")
         _data_banks = node.search(by=SearchType.Tag, value="DataBank")
-        _copyright_information = node.search(
-            by=SearchType.Tag, value="CopyrightInformation"
-        )
+        _copyright_information = node.search(by=SearchType.Tag, value="CopyrightInformation")
 
         return cls(
             publication_model=node.attrs.get("PubModel"),
-            journal=Journal.from_xml(
-                node.search(by=SearchType.Tag, value="Journal")[0]
-            ),
+            journal=Journal.from_xml(node.search(by=SearchType.Tag, value="Journal")[0]),
             title=node.search(by=SearchType.Tag, value="ArticleTitle")[0].text,
             abstract=find_tag_or_none(node, "AbstractText"),
             pagination=find_tag_or_none(node, "MedlinePgn"),
-            authors=[
-                Author.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="Author")
-            ],
+            authors=[Author.from_xml(item) for item in node.search(by=SearchType.Tag, value="Author")],
             language=node.search(by=SearchType.Tag, value="Language")[0].text,
-            date=define_datetime_from_node(
-                node.search(by=SearchType.Tag, value="ArticleDate")
-            ),
+            date=define_datetime_from_node(node.search(by=SearchType.Tag, value="ArticleDate")),
             grants=[Grant.from_xml(item) for item in _grants] if _grants else None,
             publication_types=[
-                Publication.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="PublicationType")
+                Publication.from_xml(item) for item in node.search(by=SearchType.Tag, value="PublicationType")
             ],
-            elocation_id=ELocationId.from_xml(_elocation_id[0])
-            if _elocation_id
-            else None,
+            elocation_id=ELocationId.from_xml(_elocation_id[0]) if _elocation_id else None,
             vernacular_title=_vernacular_title[0].text if _vernacular_title else None,
-            data_banks=[DataBank.from_xml(item) for item in _data_banks]
-            if _data_banks
-            else None,
-            copyright_information=_copyright_information[0].text
-            if _copyright_information
-            else None,
+            data_banks=[DataBank.from_xml(item) for item in _data_banks] if _data_banks else None,
+            copyright_information=_copyright_information[0].text if _copyright_information else None,
         )
 
 
@@ -181,9 +164,7 @@ class JournalIssue(BaseModel):
         Returns:
             JournalIssue: The JournalIssue created from the XML node.
         """
-        _date = define_datetime_from_node(
-            node.search(by=SearchType.Tag, value="PubDate")
-        )
+        _date = define_datetime_from_node(node.search(by=SearchType.Tag, value="PubDate"))
 
         return cls(
             medium=node.attrs.get("CitedMedium"),
@@ -336,26 +317,16 @@ class MedlineCitation(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> MedlineCitation:
         """Create a MedlineCitation from an XML node."""
-        _date_completed = define_datetime_from_node(
-            node.search(by=SearchType.Tag, value="DateCompleted")
-        )
-        _date_revised = define_datetime_from_node(
-            node.search(by=SearchType.Tag, value="DateRevised")[0].children
-        )
+        _date_completed = define_datetime_from_node(node.search(by=SearchType.Tag, value="DateCompleted"))
+        _date_revised = define_datetime_from_node(node.search(by=SearchType.Tag, value="DateRevised")[0].children)
 
         _keywords = node.search(by=SearchType.Tag, value="KeywordList")
-        _personal_name_subjects = node.search(
-            by=SearchType.Tag, value="PersonalNameSubjectList"
-        )
-        _comments_corrections = node.search(
-            by=SearchType.Tag, value="CommentsCorrectionsList"
-        )
+        _personal_name_subjects = node.search(by=SearchType.Tag, value="PersonalNameSubjectList")
+        _comments_corrections = node.search(by=SearchType.Tag, value="CommentsCorrectionsList")
         _other_ids = node.search(by=SearchType.Tag, value="OtherID")
         _other_abstracts = node.search(by=SearchType.Tag, value="OtherAbstract")
         _general_note = node.search(by=SearchType.Tag, value="GeneralNote")
-        _space_flight_missions = node.search(
-            by=SearchType.Tag, value="SpaceFlightMission"
-        )
+        _space_flight_missions = node.search(by=SearchType.Tag, value="SpaceFlightMission")
         _gene_symbols = node.search(by=SearchType.Tag, value="GeneSymbol")
         _supplemental_meshs = node.search(by=SearchType.Tag, value="SupplMeshList")
         _investigators = node.search(by=SearchType.Tag, value="InvestigatorList")
@@ -365,62 +336,33 @@ class MedlineCitation(BaseModel):
             pmid_version=int(node.children[0].attrs.get("Version")),
             completed=_date_completed,
             revised=_date_revised,
-            article=Article.from_xml(
-                node.search(by=SearchType.Tag, value="Article")[0]
-            ),
-            journal_info=MedlineJournalInfo.from_xml(
-                node.search(by=SearchType.Tag, value="MedlineJournalInfo")[0]
-            ),
-            chemicals=[
-                Chemical.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="Chemical")
-            ],
+            article=Article.from_xml(node.search(by=SearchType.Tag, value="Article")[0]),
+            journal_info=MedlineJournalInfo.from_xml(node.search(by=SearchType.Tag, value="MedlineJournalInfo")[0]),
+            chemicals=[Chemical.from_xml(item) for item in node.search(by=SearchType.Tag, value="Chemical")],
             subset=find_tag_or_none(node, "CitationSubset"),
-            mesh_headings=[
-                MeshHeading.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="MeshHeading")
-            ],
-            keywords=[
-                Keyword.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="Keyword")
-            ]
+            mesh_headings=[MeshHeading.from_xml(item) for item in node.search(by=SearchType.Tag, value="MeshHeading")],
+            keywords=[Keyword.from_xml(item) for item in node.search(by=SearchType.Tag, value="Keyword")]
             if _keywords
             else None,
             personal_name_subjects=[
-                Author.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="PersonalNameSubject")
+                Author.from_xml(item) for item in node.search(by=SearchType.Tag, value="PersonalNameSubject")
             ]
             if _personal_name_subjects
             else None,
             comments_corrections=[
-                CommentCorrection.from_xml(item)
-                for item in node.search(by=SearchType.Tag, value="CommentsCorrections")
+                CommentCorrection.from_xml(item) for item in node.search(by=SearchType.Tag, value="CommentsCorrections")
             ]
             if _comments_corrections
             else None,
-            other_ids=[Identifier.from_xml(item) for item in _other_ids]
-            if _other_ids
-            else None,
-            other_abstracts=[OtherAbstract.from_xml(item) for item in _other_abstracts]
-            if _other_abstracts
-            else None,
-            general_note=GeneralNote.from_xml(_general_note[0])
-            if _general_note
-            else None,
-            space_flight_missions=[item.text for item in _space_flight_missions]
-            if _space_flight_missions
-            else None,
-            gene_symbols=[item.text for item in _gene_symbols]
-            if _gene_symbols
-            else None,
-            supplemental_meshs=[
-                SupplementalMesh.from_xml(item) for item in _supplemental_meshs
-            ]
+            other_ids=[Identifier.from_xml(item) for item in _other_ids] if _other_ids else None,
+            other_abstracts=[OtherAbstract.from_xml(item) for item in _other_abstracts] if _other_abstracts else None,
+            general_note=GeneralNote.from_xml(_general_note[0]) if _general_note else None,
+            space_flight_missions=[item.text for item in _space_flight_missions] if _space_flight_missions else None,
+            gene_symbols=[item.text for item in _gene_symbols] if _gene_symbols else None,
+            supplemental_meshs=[SupplementalMesh.from_xml(item) for item in _supplemental_meshs]
             if _supplemental_meshs
             else None,
-            investigators=[Investigator.from_xml(item) for item in _investigators]
-            if _investigators
-            else None,
+            investigators=[Investigator.from_xml(item) for item in _investigators] if _investigators else None,
             coi_statement=find_tag_or_none(node, "CoiStatement"),
         )
 
@@ -661,18 +603,9 @@ class PubmedData(BaseModel):
         Returns:
             PubmedData: The PubmedData created from the XML node.
         """
-        _article_ids = [
-            ArticleId.from_xml(item)
-            for item in node.search(by=SearchType.Tag, value="ArticleId")
-        ]
-        _history = [
-            PubMedPubDate.from_xml(item)
-            for item in node.search(by=SearchType.Tag, value="PubMedPubDate")
-        ]
-        _references = [
-            Reference.from_xml(item)
-            for item in node.search(by=SearchType.Tag, value="Reference", depth=4)
-        ]
+        _article_ids = [ArticleId.from_xml(item) for item in node.search(by=SearchType.Tag, value="ArticleId")]
+        _history = [PubMedPubDate.from_xml(item) for item in node.search(by=SearchType.Tag, value="PubMedPubDate")]
+        _references = [Reference.from_xml(item) for item in node.search(by=SearchType.Tag, value="Reference", depth=4)]
 
         return cls(
             article_ids=_article_ids,
@@ -713,10 +646,7 @@ class Reference(BaseModel):
     @classmethod
     def from_xml(cls, node: Node) -> Reference:
         """Create a Reference from an XML node."""
-        _article_ids = [
-            ArticleId.from_xml(item)
-            for item in node.search(by=SearchType.Tag, value="ArticleId")
-        ]
+        _article_ids = [ArticleId.from_xml(item) for item in node.search(by=SearchType.Tag, value="ArticleId")]
 
         return cls(
             citation=node.search(SearchType.Tag, "Citation")[0].text,

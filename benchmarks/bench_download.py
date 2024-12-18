@@ -6,8 +6,8 @@ import shutil
 import time
 from pathlib import Path
 
-import aiohttp
 import aiofiles
+import aiohttp
 
 from pmcollection._lowlevel import download_files as download_files_rust
 
@@ -67,30 +67,18 @@ def run_benchmarks():
     python_times = []
     for _ in range(iterations):
         # Benchmark Rust implementation
-        rust_time = measure_time(
-            lambda: asyncio.run(
-                benchmark_rust(urls, cache_folder_rust, concurrency_limit)
-            )
-        )
+        rust_time = measure_time(lambda: asyncio.run(benchmark_rust(urls, cache_folder_rust, concurrency_limit)))
         print(rust_time)
         rust_times.append(rust_time)
         # Benchmark Python implementation
-        python_time = measure_time(
-            lambda: asyncio.run(
-                benchmark_python(urls, cache_folder_python, concurrency_limit)
-            )
-        )
+        python_time = measure_time(lambda: asyncio.run(benchmark_python(urls, cache_folder_python, concurrency_limit)))
         print(python_time)
         python_times.append(python_time)
 
     avg_rust_time = sum(rust_times) / len(rust_times)
-    print(
-        f"Rust implementation average time over {iterations} runs: {avg_rust_time} seconds"
-    )
+    print(f"Rust implementation average time over {iterations} runs: {avg_rust_time} seconds")
     avg_python_time = sum(python_times) / len(python_times)
-    print(
-        f"Python implementation average time over {iterations} runs: {avg_python_time} seconds"
-    )
+    print(f"Python implementation average time over {iterations} runs: {avg_python_time} seconds")
 
 
 if __name__ == "__main__":

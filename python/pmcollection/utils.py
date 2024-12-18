@@ -6,7 +6,7 @@ from typing import Union
 from rxml import Node, SearchType
 
 
-def find_tag_or_none(node: Node, tag: str) -> Node:
+def find_tag_or_none(node: Node, tag: str) -> str | None:
     """Find a child element or return None."""
     _node = node.search(SearchType.Tag, tag)
     return _node[0].text if _node else None

@@ -20,10 +20,12 @@ if __name__ == "__main__":
 
     # asyncio.run(download_files_python(urls, cache_folder_python, concurrency_limit))
     import time
-    from pmcollection.schemas import PubmedItem
-    from rxml import read_file, SearchType
     from pathlib import Path
+
     from rich.progress import track
+    from rxml import read_file
+
+    from pmcollection.schemas import PubmedItem
 
     list_files = list(Path("tmp").glob("*.xml"))
 
