@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.8.2",
-    "rxml>=2.0.0",
+    "rxml>=2.2.0",
 ]
 
 [project.urls]
